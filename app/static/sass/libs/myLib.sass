@@ -1,0 +1,22 @@
+=btn($colors)
+  cursor: pointer
+  border: none
+  transition: background-color .3s
+  background-color: map-get($colors, color)
+  &:focus
+    outline: none
+  &:hover
+    background-color: map-get($colors, colorHover)
+  &:active
+    background-color: map-get($colors, colorActive)
+
+$maxWidth: 1440
+=font($pcSize, $mobSize)
+    $addSize: $pcSize - $mobSize
+    $addMobSize: $addSize + $addSize * 0.7
+    @media (max-width: 767px)
+        font-size: #{"calc(#{$mobSize}px + #{$addMobSize} * ((100vw - 320px) / #{$maxWidth}))"}
+    @media (min-width: 767px) 
+        font-size: #{"calc(#{$mobSize}px +  #{$addSize} * ((100vw - 320px) / #{$maxWidth}))"}
+    @media (min-width: #{$maxWidth}px)
+        font-size: $pcSize

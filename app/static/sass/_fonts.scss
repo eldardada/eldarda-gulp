@@ -1,0 +1,25 @@
+$firstFont: 'fontName';
+
+@font-face {
+    font-family: $firstFont;
+    font-style: normal;
+    font-weight: 400;
+    src: url("./static/fonts/#{$firstFont}-Regular.woff2") format('woff2'), 
+         url("./static/fonts/#{$firstFont}-Regular.woff") format('woff');
+}
+
+@font-face {
+    font-family: $firstFont;
+    font-style: normal;
+    font-weight: 700;
+    src: url('./static/fonts/#{$firstFont}-Bold.woff2') format('woff2'), 
+         url('./static/fonts/#{$firstFont}-Bold.woff') format('woff');
+}
+
+@mixin #{$firstFont} {
+    font-family: $firstFont;
+}
+
+@mixin bold {
+    font-weight: 700;
+}

@@ -108,7 +108,7 @@ function php(){
 
 function images(){
 
-    return gulp.src(config.app.img)
+    return gulp.src([config.app.img, '!./app/static/img/svg/*.+(jpg|jpeg|png|svg)'])
 
     .pipe(gulpif(isProd,
       imagemin([
@@ -146,7 +146,6 @@ function fonts(){
 
 function watch() {
 
-
         browserSync.init({
 
           server: {
@@ -163,12 +162,11 @@ function watch() {
       gulp.watch(config.watch.img, images)
       gulp.watch(config.watch.js, scripts)
       gulp.watch(config.watch.svg, svg)
-      gulp.watch('./smartgrid.js', grid)
-
+      gulp.watch(config.watch.grid, grid)
 }
 
 function svg() {
-  return gulp.src('app/static/img/svg/*.svg')
+  return gulp.src(config.app.svg)
     .pipe(svgmin({
         js2svg: {
             pretty: true
@@ -185,21 +183,21 @@ function svg() {
     .pipe(replace('&gt;', '>'))
     .pipe(svgSprite({
         mode: {
-            symbol: {
-                sprite: "sprite.svg"
-            }
+          symbol: {
+              sprite: "../svg/sprite.svg"
+          }
         }
     }))
-    .pipe(gulp.dest('dist/static/img/svg/'));
+    .pipe(gulp.dest('dist/static/img'));
 }
 
 function grid(done){
-    let settings = require('./smartgrid.js')
+    let settings = require(config.watch.grid)
     smartgrid(appDirstatic + 'sass/libs', settings)
     done()
 };
 
-let build = gulp.series(clean, gulp.parallel(styles, php, html, scripts, images, fonts));
+let build = gulp.series(clean, gulp.parallel(styles, php, html, scripts, images, fonts, svg));
 
 gulp.task('clean', clean);
 gulp.task('build', build);

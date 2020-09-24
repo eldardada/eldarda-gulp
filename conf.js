@@ -22,7 +22,8 @@ global.config = {
         js: `${appDirstatic}js/**/*.js`,
         sass: `${appDirstatic}sass/` + mainSass,
         img: `${appDirstatic}img/**/*.+(jpg|jpeg|png|svg)`,
-        fonts: `${appDirstatic}fonts/**/*`
+        fonts: `${appDirstatic}fonts/**/*`,
+        svg: `${appDirstatic}img/svg/**/*.svg`,
     },
     // dirs for files ( deploy )
     dist: {
@@ -39,6 +40,7 @@ global.config = {
         sass: `${appDirstatic}sass/**/*.+(sass|scss)`,
         img: `${appDirstatic}img/**/*`,
         svg: `${appDirstatic}img/svg/*.svg`,
-        fonts: `${appDirstatic}fonts/**/*`
+        fonts: `${appDirstatic}fonts/**/*`,
+        grid: `./smartgrid.js`
     }
 };

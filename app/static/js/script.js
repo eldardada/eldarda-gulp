@@ -1,3 +1,3 @@
-if(document.querySelector(".swiper-container")) {
-	@@include("modules/swiper.min.js")
+if(document.querySelector('.swiper-container')) {
+	@@include('libs/swiper.min.js');
 }

@@ -21,9 +21,9 @@ const browserSync = require('browser-sync').create();
 const imagemin = require('gulp-imagemin');
 const imgCompress  = require('imagemin-jpeg-recompress');
 const mozjpeg = require('imagemin-mozjpeg');
-  // tinypng
-  const tiny = 'API';
-  const tingpng = require('gulp-tinypng');
+// tinypng
+const tiny = 'API';
+const tingpng = require('gulp-tinypng');
 // smartgrid
 const smartgrid = require('smart-grid');
 // my variables fo dev
@@ -38,6 +38,10 @@ const svgSprite = require("gulp-svg-sprite");
 const replace = require("gulp-replace");
 // html validate
 const htmlValidator = require('gulp-w3c-html-validator');
+// fonts 
+const ttf2woff2 = require('gulp-ttf2woff2');
+const fs = require('fs');
+const ttf2woff = require('gulp-ttf2woff');
 
 require('./conf.js')
 
@@ -135,12 +139,98 @@ function images(){
     .pipe(browserSync.stream())
 }
 
-function fonts(){
+// function fonts(){
 
-    return gulp.src(config.app.fonts)
+//     return gulp.src(config.app.fonts)
 
-           .pipe(gulp.dest(config.dist.fonts))
-           .pipe(browserSync.stream())
+//            .pipe(gulp.dest(config.dist.fonts))
+//            .pipe(browserSync.stream())
+// }
+
+const fontTtf2Woff = () => {
+  return gulp.src('./app/static/fonts/**/*.ttf')
+    .pipe(ttf2woff())
+    .pipe(gulp.dest('./dist/static/fonts/'));
+}
+
+const fontTtf2Woff2 = () => {
+  return gulp.src('./app/static/fonts/**/*.ttf')
+    .pipe(ttf2woff2())
+    .pipe(gulp.dest('./dist/static/fonts/'));
+}
+
+const checkWeight = (fontname) => {
+  let weight = 400;
+  switch (true) {
+    case /Thin/.test(fontname):
+      weight = 100;
+      break;
+    case /ExtraLight/.test(fontname):
+      weight = 200;
+      break;
+    case /Light/.test(fontname):
+      weight = 300;
+      break;
+    case /Regular/.test(fontname):
+      weight = 400;
+      break;
+    case /Medium/.test(fontname):
+      weight = 500;
+      break;
+    case /SemiBold/.test(fontname):
+      weight = 600;
+      break;
+    case /Semi/.test(fontname):
+      weight = 600;
+      break;
+    case /Bold/.test(fontname):
+      weight = 700;
+      break;
+    case /ExtraBold/.test(fontname):
+      weight = 800;
+      break;
+    case /Heavy/.test(fontname):
+      weight = 700;
+      break;
+    case /Black/.test(fontname):
+      weight = 900;
+      break;
+    default:
+      weight = 400;
+  }
+  return weight;
+}
+
+const cb = () => {}
+
+let srcFonts = './app/static/sass/_fonts.scss';
+let appFonts = './app/static/fonts/';
+
+const fontsStyle = (done) => {
+  fs.writeFile(srcFonts, '', cb);
+  fs.readdir(appFonts, function (err, items) {
+    if (items) {
+      let c_fontname;
+      for (var i = 0; i < items.length; i++) {
+				let fontname = items[i].split('.');
+				fontname = fontname[0];
+        let font = fontname.split('-')[0];
+        let weight = checkWeight(fontname);
+
+        if (c_fontname != fontname) {
+          fs.appendFile(srcFonts, '@include font-face("' + font + '", "' + fontname + '", ' + weight +');\r\n', cb);
+        }
+        else {
+          console.log(c_fontname);
+          console.log(fontname);
+
+        }
+        c_fontname = fontname;
+      }
+    }
+  })
+
+  done();
 }
 
 
@@ -158,11 +248,13 @@ function watch() {
       gulp.watch(config.watch.html, html)
       gulp.watch(config.watch.php, php)
       gulp.watch(config.watch.sass, styles)
-      gulp.watch(config.watch.fonts, fonts)
       gulp.watch(config.watch.img, images)
       gulp.watch(config.watch.js, scripts)
       gulp.watch(config.watch.svg, svg)
       gulp.watch(config.watch.grid, grid)
+      gulp.watch(config.watch.fonts, ttf2woff);
+      gulp.watch(config.watch.fonts, ttf2woff2);
+      gulp.watch('./dist/static/fonts', fontsStyle);
 }
 
 function svg() {
@@ -197,7 +289,7 @@ function grid(done){
     done()
 };
 
-let build = gulp.series(clean, gulp.parallel(styles, php, html, scripts, images, fonts, svg));
+let build = gulp.series(clean, gulp.parallel(styles, php, html, scripts, images, fontTtf2Woff, fontTtf2Woff2, fontsStyle, svg));
 
 gulp.task('clean', clean);
 gulp.task('build', build);

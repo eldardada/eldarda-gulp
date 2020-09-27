@@ -112,7 +112,7 @@ function php(){
 
 function images(){
 
-    return gulp.src([config.app.img, '!./app/static/img/svg/*.+(jpg|jpeg|png|svg)'])
+    return gulp.src([config.app.img, '!app/static/img/svg/**'])
 
     .pipe(gulpif(isProd,
       imagemin([
@@ -289,7 +289,7 @@ function grid(done){
     done()
 };
 
-let build = gulp.series(clean, gulp.parallel(styles, php, html, scripts, images, fontTtf2Woff, fontTtf2Woff2, fontsStyle, svg));
+let build = gulp.series(clean, gulp.parallel(styles, php, html, images, scripts, fontTtf2Woff, fontTtf2Woff2, fontsStyle, svg));
 
 gulp.task('clean', clean);
 gulp.task('build', build);

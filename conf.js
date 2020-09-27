@@ -34,7 +34,7 @@ global.config = {
     },
     // watching files dirs
     watch: {
-        html: `${appDir}*.html`,
+        html: `${appDir}**/*.html`,
         php: `${appDir}*.php`,
         js: `${appDirstatic}js/**/*.js`,
         sass: `${appDirstatic}sass/**/*.+(sass|scss)`,

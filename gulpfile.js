@@ -1,166 +1,166 @@
 // sys
-const gulp = require('gulp');
+import gulp from 'gulp';
+
 // else sys
-const gulpif = require('gulp-if');
-const del = require('del');
-// html
-// const rigger = require('gulp-rigger');
+import gulpif from 'gulp-if';
+import del from 'del';
+
 // css
-const sass = require('gulp-sass');
-const autoprefixer = require('gulp-autoprefixer');
-const cleanCSS = require('gulp-clean-css');
-const sourcemaps = require('gulp-sourcemaps');
-const gcmq = require('gulp-group-css-media-queries');
-// js
-// const concat= require('gulp-concat');
-const babel = require('gulp-babel');
-const uglyfly = require('gulp-uglyfly');
+import sass from 'gulp-sass';
+import autoprefixer from 'gulp-autoprefixer';
+import cleanCSS from 'gulp-clean-css';
+import sourcemaps from 'gulp-sourcemaps';
+import gcmq from 'gulp-group-css-media-queries';
+
 // browser sync
-const browserSync = require('browser-sync').create();
+import browserSync from 'browser-sync';
+
 // img
-const imagemin = require('gulp-imagemin');
-const imgCompress  = require('imagemin-jpeg-recompress');
-const mozjpeg = require('imagemin-mozjpeg');
+import imagemin from 'gulp-imagemin';
+import imgCompress from 'imagemin-jpeg-recompress';
+import mozjpeg from 'imagemin-mozjpeg';
+
 // tinypng
 const tiny = 'API';
-const tingpng = require('gulp-tinypng');
+import tingpng from 'gulp-tinypng';
+
 // smartgrid
-const smartgrid = require('smart-grid');
-// my variables fo dev
+import smartgrid from 'smart-grid';
+
+// html
+import fileinclude from 'gulp-file-include';
+import htmlValidator from 'gulp-w3c-html-validator';
+
+// svg sprite
+import svgmin from 'gulp-svgmin';
+import cheerio from 'gulp-cheerio';
+import svgSprite from 'gulp-svg-sprite';
+import replace from 'gulp-replace';
+
+// fonts 
+import ttf2woff2 from 'gulp-ttf2woff2';
+import fs from 'fs';
+import ttf2woff from 'gulp-ttf2woff';
+
+// js
+import webpack from 'webpack-stream';
+
+// my variables for dev
 const isDev = process.argv.includes('--dev');
 const isProd = !isDev;
-// include files
-const fileinclude = require("gulp-file-include");
-// svg sprite
-const svgmin = require("gulp-svgmin");
-const cheerio = require("gulp-cheerio");
-const svgSprite = require("gulp-svg-sprite");
-const replace = require("gulp-replace");
-// html validate
-const htmlValidator = require('gulp-w3c-html-validator');
-// fonts 
-const ttf2woff2 = require('gulp-ttf2woff2');
-const fs = require('fs');
-const ttf2woff = require('gulp-ttf2woff');
 
-require('./conf.js')
+import './conf.js';
+
+// webpack settings
+const webConfig = {
+  output: {
+      filename: 'script.js'
+  },
+  module: {
+      rules: [
+          {
+              test: /\.js$/,
+              exclude: '/node_modules/',
+              use: {
+                  loader: 'babel-loader',
+                  options: {
+                      presets: ['@babel/preset-env'],
+                      plugins: ['@babel/plugin-proposal-object-rest-spread']
+                  }
+              }
+          }
+      ]
+  },
+  mode: isDev ? 'development' : 'production',
+  devtool: isDev ? 'eval-source-map' : 'none'
+}
 
 // delete dist dir
-function clean(){
-    return del(distDir)
+export const clean = () => del(distDir);
+
+const styles = () => {
+  return gulp.src(config.app.sass)
+          .pipe(gulpif(isDev, sourcemaps.init()))
+          .pipe(sass().on('error', sass.logError))
+          .pipe(gcmq())
+          .pipe(autoprefixer({
+              browsers: ['> 0.1%'],
+              cascade: false
+          }))
+          .pipe(gulpif(isProd, cleanCSS({
+              level: 2
+          })))
+          .pipe(gulpif(isDev, sourcemaps.write()))
+
+          .pipe(gulp.dest(config.dist.css))
+          .pipe(browserSync.stream())
 }
 
-function styles(){
-
-    return gulp.src(config.app.sass)
-
-            .pipe(gulpif(isDev, sourcemaps.init()))
-            .pipe(sass().on('error', sass.logError))
-            .pipe(gcmq())
-            .pipe(autoprefixer({
-                browsers: ['> 0.1%'],
-                cascade: false
-            }))
-            .pipe(gulpif(isProd, cleanCSS({
-                level: 2
-            })))
-            .pipe(gulpif(isDev, sourcemaps.write()))
-
-            .pipe(gulp.dest(config.dist.css))
-            .pipe(browserSync.stream())
-
-}
-
-function scripts(){
-
+const scripts = () => {
     return gulp.src(config.app.js)
-            // .pipe(concat('script.js'))
-            .pipe(fileinclude())
-            .pipe(babel({
-              presets: ['@babel/env']
-             }))
-             
-            .pipe(gulpif(isProd,
-              uglyfly({
-                toplevel: true
-              })
-            ))
-
-            .pipe(gulp.dest(config.dist.js))
-            .pipe(browserSync.stream())
+           .pipe(webpack(webConfig))
+           .pipe(gulp.dest(config.dist.js))
+           .pipe(browserSync.stream())
 }
 
-function html(){
-
+const html = () => {
     return gulp.src(html_arch)
-
-            // .pipe(rigger())
-            .pipe(fileinclude())
-            .pipe(htmlValidator())
-            .pipe(gulp.dest(distDir))
-            .pipe(browserSync.stream())
+           .pipe(fileinclude())
+           .pipe(htmlValidator())
+           .pipe(gulp.dest(distDir))
+           .pipe(browserSync.stream())
 }
 
-function php(){
-
+const php = () => {
     return gulp.src(config.app.php)
-
-
-            .pipe(gulp.dest(distDir))
-            .pipe(browserSync.stream())
+           .pipe(gulp.dest(distDir))
+           .pipe(browserSync.stream())
 }
 
-function images(){
+const images = () => {
 
     return gulp.src([config.app.img, '!app/static/img/svg/**'])
 
-    .pipe(gulpif(isProd,
-      imagemin([
-        imgCompress({
-            loops: 4,
-            min: 70,
-            max: 80,
-            quality: 'high'
-        }),
-        mozjpeg({
-          quality: 60,
-          progressive: true,
-          tune: "ms-ssim",
-          smooth: 2
-        }),
-        imagemin.gifsicle(),
-        imagemin.svgo()
-      ])
-    ))
-
-    .pipe(gulpif(isProd, tingpng(tiny) ))
-
-    .pipe(gulp.dest(config.dist.img))
-    .pipe(browserSync.stream())
+           .pipe(gulpif(isProd,
+             imagemin([
+               imgCompress({
+                   loops: 4,
+                   min: 70,
+                   max: 80,
+                   quality: 'high'
+               }),
+               mozjpeg({
+                 quality: 60,
+                 progressive: true,
+                 tune: "ms-ssim",
+                 smooth: 2
+               }),
+               imagemin.gifsicle(),
+               imagemin.svgo()
+             ])
+           ))
+ 
+           .pipe(gulpif(isProd, tingpng(tiny) ))
+ 
+           .pipe(gulp.dest(config.dist.img))
+           .pipe(browserSync.stream())
 }
-
-// function fonts(){
-
-//     return gulp.src(config.app.fonts)
-
-//            .pipe(gulp.dest(config.dist.fonts))
-//            .pipe(browserSync.stream())
-// }
 
 const fontTtf2Woff = () => {
   return gulp.src('./app/static/fonts/**/*.ttf')
-    .pipe(ttf2woff())
-    .pipe(gulp.dest('./dist/static/fonts/'));
+         .pipe(ttf2woff())
+         .pipe(gulp.dest('./dist/static/fonts/'));
 }
 
 const fontTtf2Woff2 = () => {
   return gulp.src('./app/static/fonts/**/*.ttf')
-    .pipe(ttf2woff2())
-    .pipe(gulp.dest('./dist/static/fonts/'));
+         .pipe(ttf2woff2())
+         .pipe(gulp.dest('./dist/static/fonts/'));
 }
 
 const checkWeight = (fontname) => {
   let weight = 400;
+  
   switch (true) {
     case /Thin/.test(fontname):
       weight = 100;
@@ -198,13 +198,9 @@ const checkWeight = (fontname) => {
     default:
       weight = 400;
   }
+
   return weight;
 }
-
-const cb = () => {}
-
-let srcFonts = './app/static/sass/_fonts.scss';
-let appFonts = './app/static/fonts/';
 
 const fontsStyle = (done) => {
   fs.writeFile(srcFonts, '', cb);
@@ -234,16 +230,15 @@ const fontsStyle = (done) => {
 }
 
 
-function watch() {
+export const watch = () => {
+      browserSync.init({
 
-        browserSync.init({
-
-          server: {
-            baseDir: distDir
-          }
-          // if u want to use sync + ur localhost
-          // proxy: config.localhost
-        })
+        server: {
+          baseDir: distDir
+        }
+        // if u want to use sync + ur localhost
+        // proxy: config.localhost
+      })
 
       gulp.watch(config.watch.html, html)
       gulp.watch(config.watch.php, php)
@@ -252,47 +247,57 @@ function watch() {
       gulp.watch(config.watch.js, scripts)
       gulp.watch(config.watch.svg, svg)
       gulp.watch(config.watch.grid, grid)
-      gulp.watch(config.watch.fonts, ttf2woff);
-      gulp.watch(config.watch.fonts, ttf2woff2);
-      gulp.watch('./dist/static/fonts', fontsStyle);
+      gulp.watch(config.watch.fonts, gulp.parallel(ttf2woff, ttf2woff2))
+      gulp.watch(config.dist.fonts, fontsStyle)
 }
 
-function svg() {
+export const svg = () => {
   return gulp.src(config.app.svg)
-    .pipe(svgmin({
-        js2svg: {
-            pretty: true
-        }
-    }))
-    .pipe(cheerio({
-        run: function($) {
-            $('[fill]').removeAttr('fill');
-            $('[stroke]').removeAttr('stroke');
-            $('[style]').removeAttr('style');
-        },
-        parserOptions: {xmlMode: true}
-    }))
-    .pipe(replace('&gt;', '>'))
-    .pipe(svgSprite({
-        mode: {
-          symbol: {
-              sprite: "../svg/sprite.svg"
-          }
-        }
-    }))
-    .pipe(gulp.dest('dist/static/img'));
+        .pipe(svgmin({
+            js2svg: {
+                pretty: true
+            }
+        }))
+        .pipe(cheerio({
+            run: function($) {
+                $('[fill]').removeAttr('fill');
+                $('[stroke]').removeAttr('stroke');
+                $('[style]').removeAttr('style');
+            },
+            parserOptions: {xmlMode: true}
+        }))
+        .pipe(replace('&gt;', '>'))
+        .pipe(svgSprite({
+            mode: {
+              symbol: {
+                  sprite: "../svg/sprite.svg"
+              }
+            }
+        }))
+        .pipe(gulp.dest('dist/static/img'));
 }
 
-function grid(done){
+export const grid = (done) => {
     let settings = require(config.watch.grid)
     smartgrid(appDirstatic + 'sass/libs', settings)
     done()
 };
 
-let build = gulp.series(clean, gulp.parallel(styles, php, html, images, scripts, fontTtf2Woff, fontTtf2Woff2, fontsStyle, svg));
+export const normalize = () =>{
+  return gulp.src(config.npm.normalize)
+          .pipe(gulp.dest(config.app.stylesLibs))
+};
 
-gulp.task('clean', clean);
-gulp.task('build', build);
-gulp.task('grid', grid);
-gulp.task('svg', svg);
-gulp.task('watch', gulp.series(build, watch));
+export const reset = () => {
+  return gulp.src(config.npm.reset)
+          .pipe(gulp.dest(config.app.stylesLibs))
+};
+
+export const swiper = () => {
+  return gulp.src(config.npm.swiper)
+          .pipe(gulp.dest(config.app.stylesLibs))
+};
+
+
+export const build = gulp.series(clean, gulp.parallel(styles, php, html, images, scripts, fontTtf2Woff, fontTtf2Woff2, fontsStyle, svg));
+

@@ -1,4 +1,4 @@
-module.exports = {
+const smartgridSettings = {
     outputStyle: 'sass', /* less || scss || sass || styl */
     columns: 12, /* number of grid columns */
     offset: '30px', /* gutter width px || % || rem */
@@ -25,3 +25,5 @@ module.exports = {
         }
     }
 };
+
+export default smartgridSettings;

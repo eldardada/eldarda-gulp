@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.build = exports.swiper = exports.reset = exports.normalize = exports.grid = exports.svg = exports.watch = exports.clean = void 0;
+exports.build = exports.csslib = exports.searchCss = exports.grid = exports.svg = exports.watch = exports.clean = void 0;
 
 var _gulp = _interopRequireDefault(require("gulp"));
 
@@ -53,6 +53,8 @@ var _gulpTtf2woff2 = _interopRequireDefault(require("gulp-ttf2woff"));
 
 var _webpackStream = _interopRequireDefault(require("webpack-stream"));
 
+var _smartgrid = _interopRequireDefault(require("./smartgrid.js"));
+
 require("./conf.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
@@ -67,6 +69,7 @@ var tiny = 'API';
 // my variables for dev
 var isDev = process.argv.includes('--dev');
 var isProd = !isDev;
+// import { config } from 'process';
 // webpack settings
 var webConfig = {
   output: {
@@ -90,7 +93,9 @@ var webConfig = {
 }; // delete dist dir
 
 var clean = function clean() {
-  return (0, _del["default"])(distDir);
+  var name = process.argv[3].replace('--', '');
+  var path = name == 'css-libs' ? appDirstatic + 'sass/libs/**/*' : distDir;
+  (0, _del["default"])(path);
 };
 
 exports.clean = clean;
@@ -277,31 +282,44 @@ var svg = function svg() {
 exports.svg = svg;
 
 var grid = function grid(done) {
-  var settings = require(config.watch.grid);
-
-  (0, _smartGrid["default"])(appDirstatic + 'sass/libs', settings);
+  (0, _smartGrid["default"])(appDirstatic + 'sass/libs', _smartgrid["default"]);
   done();
 };
 
 exports.grid = grid;
 
-var normalize = function normalize() {
-  return _gulp["default"].src(config.npm.normalize).pipe(_gulp["default"].dest(config.app.stylesLibs));
+var searchCss = function searchCss(namedir) {
+  _fs["default"].readdir(namedir, function (err, files) {
+    if (files) {
+      var endOnce = true;
+
+      for (var i = 0; i < files.length; i++) {
+        var filename = files[i];
+
+        if (/\.sass/.test(filename) && /\./.test(filename)) {
+          return _gulp["default"].src(namedir + '/*.sass').pipe(_gulp["default"].dest(config.app.stylesLibs));
+          break;
+        } else if (/\.scss/.test(filename)) {
+          return _gulp["default"].src(namedir + '/*.scss').pipe(_gulp["default"].dest(config.app.stylesLibs));
+          break;
+        } else if (!/\./.test(filename) && !endOnce) {
+          searchCss(namedir + '/' + filename);
+        } else if (i == files.length - 1 && endOnce) {
+          i = 0;
+          endOnce = false;
+        }
+      }
+    }
+  });
 };
 
-exports.normalize = normalize;
+exports.searchCss = searchCss;
 
-var reset = function reset() {
-  return _gulp["default"].src(config.npm.reset).pipe(_gulp["default"].dest(config.app.stylesLibs));
+var csslib = function csslib() {
+  return searchCss(nodeModules + process.argv[3].replace('--', ''));
 };
 
-exports.reset = reset;
-
-var swiper = function swiper() {
-  return _gulp["default"].src(config.npm.swiper).pipe(_gulp["default"].dest(config.app.stylesLibs));
-};
-
-exports.swiper = swiper;
+exports.csslib = csslib;
 
 var build = _gulp["default"].series(clean, _gulp["default"].parallel(styles, php, html, images, scripts, fontTtf2Woff, fontTtf2Woff2, fontsStyle, svg));
 

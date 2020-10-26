@@ -45,11 +45,15 @@ import ttf2woff from 'gulp-ttf2woff';
 // js
 import webpack from 'webpack-stream';
 
+// smart-grid
+import smartgridSettings from './smartgrid.js';
+
 // my variables for dev
 const isDev = process.argv.includes('--dev');
 const isProd = !isDev;
 
 import './conf.js';
+// import { config } from 'process';
 
 // webpack settings
 const webConfig = {
@@ -76,7 +80,11 @@ const webConfig = {
 }
 
 // delete dist dir
-export const clean = () => del(distDir);
+export const clean = () => {
+  const name = process.argv[3].replace('--', '');
+  let path = name == 'css-libs' ? appDirstatic + 'sass/libs/**/*' : distDir;
+  del(path);
+}
 
 const styles = () => {
   return gulp.src(config.app.sass)
@@ -278,26 +286,43 @@ export const svg = () => {
 }
 
 export const grid = (done) => {
-    let settings = require(config.watch.grid)
-    smartgrid(appDirstatic + 'sass/libs', settings)
+    smartgrid(appDirstatic + 'sass/libs', smartgridSettings)
     done()
 };
 
-export const normalize = () =>{
-  return gulp.src(config.npm.normalize)
-          .pipe(gulp.dest(config.app.stylesLibs))
-};
+export const searchCss = (namedir) => {
+  fs.readdir(namedir, (err, files) => {
+    if(files) {
+      
+      let endOnce = true;
 
-export const reset = () => {
-  return gulp.src(config.npm.reset)
-          .pipe(gulp.dest(config.app.stylesLibs))
-};
+      for(let i = 0; i < files.length; i++) {
 
-export const swiper = () => {
-  return gulp.src(config.npm.swiper)
-          .pipe(gulp.dest(config.app.stylesLibs))
-};
+        let filename = files[i];
 
+        if(/\.sass/.test(filename) && /\./.test(filename)) {
+          return gulp.src(namedir + '/*.sass')
+          .pipe(gulp.dest(config.app.stylesLibs))
+          break;
+        }
+        else if(/\.scss/.test(filename)) {
+          return gulp.src(namedir + '/*.scss')
+          .pipe(gulp.dest(config.app.stylesLibs))
+          break;
+        }
+        else if(!(/\./.test(filename)) && !endOnce) {
+          searchCss(namedir + '/' + filename);
+        }
+        else if(i == files.length - 1 && endOnce) {
+          i = 0;
+          endOnce = false;
+        }
+      }
+    }
+  });
+}
+
+export const csslib = () => searchCss(nodeModules + process.argv[3].replace('--', ''));
 
 export const build = gulp.series(clean, gulp.parallel(styles, php, html, images, scripts, fontTtf2Woff, fontTtf2Woff2, fontsStyle, svg));
 

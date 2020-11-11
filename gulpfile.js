@@ -134,7 +134,7 @@ export const php = () => {
 
 const images = () => {
 
-    return gulp.src([config.app.img, '!app/static/img/svg/**'])
+    return gulp.src(config.app.img)
 
            .pipe(gulpif(minImg,
              imagemin([
@@ -269,7 +269,8 @@ const svg = () => {
               }
             }
         }))
-        .pipe(gulp.dest('dist/static/img'));
+        .pipe(gulp.dest('dist/static/img'))
+        .pipe(browserSync.stream());
 }
 
 export const grid = done => {
@@ -277,43 +278,78 @@ export const grid = done => {
     done()
 };
 
-const searchCss = namedir => {
-  fs.readdir(namedir, (err, files) => {
-    if(files) {
-      
-      let endOnce = true;
+import path from 'path';
 
-      for(let i = 0; i < files.length; i++) {
+export const getFiles = (dir, files_) => {
+    
+  files_ = files_ || [];
 
-        let filename = files[i];
+    let files = fs.readdirSync(dir);
 
-        if(/\.sass/.test(filename) && /\./.test(filename)) {
-          return gulp.src(namedir + '/*.sass')
-          .pipe(gulp.dest(config.app.stylesLibs))
+    for(let i in files){
+        let name = dir + '/' + files[i];
+        if (fs.statSync(name).isDirectory()){
+            getFiles(name, files_);
+        } else {
+            files_.push(name);
         }
-        else if(/\.scss/.test(filename)) {
-          return gulp.src(namedir + '/*.scss')
-          .pipe(gulp.dest(config.app.stylesLibs))
-        }
-        else if(!(/\./.test(filename)) && !endOnce) {
-          searchCss(namedir + '/' + filename);
-        }
-        else if(i == files.length - 1 && endOnce) {
-          i = 0;
-          endOnce = false;
-        }
-      }
     }
-  });
-}
+    files_ = files_.filter(file => {
+      return /\.scss$/.test(file);
+    });
+    
+    return files_;
+};
 
-export const csslib = () => searchCss(nodeModules + process.argv[3].replace('--', ''));
+// const searchCss = namedir => {
+//   fs.readdir(namedir, (err, files) => {
+//     if(files) {
+      
+//       letfilesList = files.filter(file => {
+//         return file.toLowerCase().includes('.scss');
+//       });
+
+//       console.log(filesList)
+
+//       // for(let i = start; i < files.length; i++) {
+
+//       //   let filename = files[i];
+
+//       //   if(/\.sass/.test(filename) && /\./.test(filename)) {
+//       //     return gulp.src(namedir + '/*.sass')
+//       //     .pipe(gulp.dest(config.app.stylesLibs))
+//       //   }
+//       //   else if(/\.scss/.test(filename)) {
+//       //     return gulp.src(namedir + '/*.scss')
+//       //     .pipe(gulp.dest(config.app.stylesLibs))
+//       //   }
+//       //   else if(!(/\./.test(filename)) && !endOnce) {
+//       //     console.log(filename)
+//       //     searchCss(namedir + '/' + filename);
+//       //   }
+//       //   else if(i == files.length - 1 && endOnce) {
+//       //     i = 0;
+//       //     endOnce = false;
+//       //   }
+//       // }
+//     }
+//   });
+// }
+
+export const csslib = () =>  {
+  const libName = process.argv[3].replace('--', '');
+  const files = getFiles(nodeModules + libName);
+
+  return gulp.src(files)
+         .pipe(gulp.dest(config.app.stylesLibs + '/' + libName));
+}
 
 export const fonts = gulp.series(gulp.parallel(fontTtf2Woff, fontTtf2Woff2), fontsStyle);
 
-export const build = gulp.series(clean, gulp.parallel(html, images, scripts, php, svg), fonts, styles);
+export const build = gulp.series(clean, html, images, php, svg, scripts, fonts, styles);
 
 export const watch = gulp.series(build, () => {
+    
     browserSync.init({
 
       server: {
@@ -325,13 +361,13 @@ export const watch = gulp.series(build, () => {
     })
 
     gulp.watch(config.watch.html, html)
-    gulp.watch(config.watch.php, php)
-    gulp.watch(config.watch.sass, styles)
-    gulp.watch(config.watch.img, images)
-    gulp.watch(config.watch.js, scripts)
-    gulp.watch(config.watch.svg, svg)
     gulp.watch(config.watch.grid, grid)
+    gulp.watch(config.watch.img, images)
+    gulp.watch(config.watch.svg, svg)
+    gulp.watch(config.watch.js, scripts)
     gulp.watch(config.watch.fonts, fonts)
+    gulp.watch(config.watch.sass, styles)
+    gulp.watch(config.watch.php, php)
   }
 );
       

@@ -37,12 +37,15 @@
     "gulp-w3c-html-validator": "^2.0.1",
     "imagemin-jpeg-recompress": "^7.0.0",
     "imagemin-mozjpeg": "^9.0.0",
+    "path": "^0.12.7",
     "smart-grid": "^2.1.2",
     "webpack": "^5.2.0",
     "webpack-stream": "^6.1.0"
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "inputmask": "^5.0.5",
+    "intl-tel-input": "^17.0.8",
     "normalize.scss": "^0.1.0",
     "reset-css": "^5.0.1",
     "swiper": "^6.3.4"

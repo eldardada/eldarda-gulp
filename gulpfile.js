@@ -16,15 +16,6 @@ import gcmq from 'gulp-group-css-media-queries';
 // browser sync
 import browserSync from 'browser-sync';
 
-// images
-import imagemin from 'gulp-imagemin';
-import imgCompress from 'imagemin-jpeg-recompress';
-import mozjpeg from 'imagemin-mozjpeg';
-
-// tinypng
-const tiny = 'API';
-import tingpng from 'gulp-tinypng';
-
 // html
 import fileinclude from 'gulp-file-include';
 import htmlValidator from 'gulp-w3c-html-validator';
@@ -38,7 +29,6 @@ import replace from 'gulp-replace';
 
 // fonts 
 import ttf2woff2 from 'gulp-ttf2woff2';
-import ttf2woff from 'gulp-ttf2woff';
 
 // js
 import webpack from 'webpack-stream';
@@ -49,8 +39,8 @@ import smartgridSettings from './smartgrid.js';
 
 // my variables for dev
 const isDev = process.argv.includes('--dev');
-const minImg = process.argv.includes('--min-img');
 const isProd = !isDev;
+const isValidate = process.argv.includes('--validate');
 
 import './conf.js';
 
@@ -87,7 +77,6 @@ export const clean = (done) => {
       path = name == 'css-libs' ? appDirstatic + 'sass/libs/**/*' : distDir;
     }
   }
-
   del(path);
   done();
 }
@@ -98,14 +87,13 @@ export const styles = () => {
           .pipe(sass().on('error', sass.logError))
           .pipe(gcmq())
           .pipe(autoprefixer({
-              browsers: ['> 0.1%'],
+              browsers: ['last 3 versions'],
               cascade: false
           }))
           .pipe(gulpif(isProd, cleanCSS({
               level: 2
           })))
           .pipe(gulpif(isDev, sourcemaps.write()))
-
           .pipe(gulp.dest(config.dist.css))
           .pipe(browserSync.stream())
 }
@@ -120,8 +108,8 @@ export const scripts = () => {
 export const html = () => {
     return gulp.src(html_arch)
            .pipe(fileinclude())
-           .pipe(htmlValidator())
            .pipe(gulpif(isProd, htmlmin({collapseWhitespace: true })))
+           .pipe(gulpif(isValidate, htmlValidator()))
            .pipe(gulp.dest(distDir))
            .pipe(browserSync.stream())
 }
@@ -133,38 +121,9 @@ export const php = () => {
 }
 
 const images = () => {
-
     return gulp.src(config.app.img)
-
-           .pipe(gulpif(minImg,
-             imagemin([
-               imgCompress({
-                   loops: 4,
-                   min: 70,
-                   max: 80,
-                   quality: 'high'
-               }),
-               mozjpeg({
-                 quality: 60,
-                 progressive: true,
-                 tune: "ms-ssim",
-                 smooth: 2
-               }),
-               imagemin.gifsicle(),
-               imagemin.svgo()
-             ])
-           ))
- 
-           .pipe(gulpif(minImg, tingpng(tiny) ))
- 
            .pipe(gulp.dest(config.dist.img))
            .pipe(browserSync.stream())
-}
-
-const fontTtf2Woff = () => {
-  return gulp.src('./app/static/fonts/**/*.ttf')
-         .pipe(ttf2woff())
-         .pipe(gulp.dest('./dist/static/fonts/'));
 }
 
 const fontTtf2Woff2 = () => {
@@ -278,8 +237,6 @@ export const grid = done => {
     done()
 };
 
-import path from 'path';
-
 export const getFiles = (dir, files_) => {
     
   files_ = files_ || [];
@@ -301,41 +258,6 @@ export const getFiles = (dir, files_) => {
     return files_;
 };
 
-// const searchCss = namedir => {
-//   fs.readdir(namedir, (err, files) => {
-//     if(files) {
-      
-//       letfilesList = files.filter(file => {
-//         return file.toLowerCase().includes('.scss');
-//       });
-
-//       console.log(filesList)
-
-//       // for(let i = start; i < files.length; i++) {
-
-//       //   let filename = files[i];
-
-//       //   if(/\.sass/.test(filename) && /\./.test(filename)) {
-//       //     return gulp.src(namedir + '/*.sass')
-//       //     .pipe(gulp.dest(config.app.stylesLibs))
-//       //   }
-//       //   else if(/\.scss/.test(filename)) {
-//       //     return gulp.src(namedir + '/*.scss')
-//       //     .pipe(gulp.dest(config.app.stylesLibs))
-//       //   }
-//       //   else if(!(/\./.test(filename)) && !endOnce) {
-//       //     console.log(filename)
-//       //     searchCss(namedir + '/' + filename);
-//       //   }
-//       //   else if(i == files.length - 1 && endOnce) {
-//       //     i = 0;
-//       //     endOnce = false;
-//       //   }
-//       // }
-//     }
-//   });
-// }
-
 export const csslib = () =>  {
   const libName = process.argv[3].replace('--', '');
   const files = getFiles(nodeModules + libName);
@@ -344,7 +266,7 @@ export const csslib = () =>  {
          .pipe(gulp.dest(config.app.stylesLibs + '/' + libName));
 }
 
-export const fonts = gulp.series(gulp.parallel(fontTtf2Woff, fontTtf2Woff2), fontsStyle);
+export const fonts = gulp.series(fontTtf2Woff2, fontsStyle);
 
 export const build = gulp.series(clean, html, images, php, svg, scripts, fonts, styles);
 
